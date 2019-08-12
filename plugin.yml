@@ -2,5 +2,34 @@ name: YLeagueOfServers
 api: ['1.0.0']
 main: yxmingy.leagueofservers.Main
 version: 1.1.0
-author: xMing
+author: 'xMing & PetteriM1'
 load: POSTWORLD
+
+depend: ["SynapseAPI"]
+loadbefore: ["TransferCommand"]
+
+commands:
+  transfer:
+    description: Switch server
+    usage: "/transfer <target>"
+    aliases: ["srv"]
+    permission: synapse.commands.transfer
+  hub:
+    description: Go to lobby server
+    usage: "/hub"
+    permission: synapse.commands.hub
+  lobby:
+    description: Go to lobby server
+    usage: "/lobby"
+    permission: synapse.commands.lobby
+
+permissions:
+  synapse.commands.transfer:
+    description: "synapse.commands.transfer"
+    default: true
+  synapse.commands.hub:
+    description: "synapse.commands.hub"
+    default: true
+  synapse.commands.lobby:
+    description: "synapse.commands.lobby"
+    default: true

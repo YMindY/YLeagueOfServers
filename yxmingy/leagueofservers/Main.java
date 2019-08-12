@@ -6,9 +6,9 @@ import cn.nukkit.event.Listener;
 import cn.nukkit.event.player.PlayerJoinEvent;
 import cn.nukkit.event.player.PlayerQuitEvent;
 import cn.nukkit.event.server.PlayerDataSerializeEvent;
-import cn.nukkit.event.player.PlayerCommandPreprocessEvent;
 import cn.nukkit.plugin.PluginBase;
 import cn.nukkit.utils.Config;
+import cn.nukkit.command.*;
 import me.onebone.economyapi.EconomyAPI;
 import java.io.OutputStream;
 import java.util.UUID;
@@ -17,6 +17,11 @@ import cn.nukkit.nbt.tag.CompoundTag;
 import cn.nukkit.nbt.NBTIO;
 import cn.nukkit.Server;
 import java.util.HashSet;
+import org.itxtech.synapseapi.SynapsePlayer;
+
+import java.util.List;
+import java.util.Random;
+
 
 import java.io.*;
 
@@ -26,6 +31,8 @@ public class Main extends PluginBase implements Listener
   private boolean is_host;
   private LeagueHandler handler;
   private String pdatas;
+  //synapsetools
+  Config c;
   public static HashSet<String> transfer;
   @Override
   public void onLoad()
@@ -59,7 +66,26 @@ public class Main extends PluginBase implements Listener
   {
     getServer().getPluginManager().registerEvents(this,this);
     handler = new LeagueHandler(String.valueOf(conf.get("主服务器主目录")));
-    getLogger().info("YLeagueOfServers is enabled! auther: xMing");
+    
+    //synapsetools>>
+        saveResource("synapsetools.yml");
+        c = new Config(getDataFolder()+"/synapsetools.yml",Config.YAML);
+        if (c.getBoolean("enableFoodBarHack")) {
+            getServer().getScheduler().scheduleRepeatingTask(new cn.nukkit.scheduler.Task() {
+                @Override
+                public void onRun(int i) {
+                    try {
+                        for (Player p : Server.getInstance().getOnlinePlayers().values()) {
+                            p.getFoodData().sendFoodLevel();
+                        }
+                    } catch (Exception ignore) {}
+                }
+            }, 1, true);
+        }
+    //<<synapsetools
+    
+    getLogger().info("YLeagueOfServers is enabled! auther: xMing (Included synapsetools' part source)");
+    
   }
   @Override
   public void onDisable()
@@ -89,20 +115,12 @@ public class Main extends PluginBase implements Listener
       EconomyAPI.getInstance().setMoney(player,Double.parseDouble(""+playerdata.get("钱数")));
     }
   }
-  @EventHandler
-  public void onCommand(PlayerCommandPreprocessEvent event)
+  private void transferPlayer(SynapsePlayer player,String target)
   {
-    if(!"/".contentEquals(event.getMessage().substring(0,1)))
-      return;
-    String cmd = event.getMessage().substring(1);
-    if("transfer".contentEquals(cmd.substring(0,8))) {
-      Player player = event.getPlayer();
-      savePlayerData(player);
-      event.setCancelled();
-      transfer.add(player.getName());
-      player.sendMessage("检测到你使用了跨服指令，保存数据中...指令在3秒后执行");
-      getServer().getScheduler().scheduleDelayedTask(new TransferTask(player,cmd),60);
-    }
+    savePlayerData(player);
+    transfer.add(player.getName());
+    player.sendMessage("保存数据中...在3秒后跨服");
+    getServer().getScheduler().scheduleDelayedTask(new TransferTask(player,target),60);
   }
   @EventHandler
   public void onQuit(PlayerQuitEvent event)
@@ -127,4 +145,45 @@ public class Main extends PluginBase implements Listener
       Server.getInstance().getLogger().error(Server.getInstance().getLanguage().translateString("nukkit.data.saveError", player.namedTag.toString().toLowerCase(), e));
     }
   }
+  
+  //synapsetools>>
+  public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (sender instanceof SynapsePlayer) {
+            SynapsePlayer p = (SynapsePlayer) sender;
+            if (command.getName().equalsIgnoreCase("transfer")) {
+                if (c.getBoolean("transferCommandEnabled")) {
+                    if (args.length > 0) {
+                        if (p.getSynapseEntry().getServerDescription().equals(args[0])) {
+                            p.sendMessage("\u00A7cYou are already on this server");
+                        } else {
+                            transferPlayer(p,args[0]);
+                        }
+                    } else {
+                        p.sendMessage("Usage: /transfer <target>");
+                    }
+                } else {
+                    return false;
+                }
+            } else if (command.getName().equalsIgnoreCase("hub") || command.getName().equalsIgnoreCase("lobby")) {
+                if (c.getBoolean("hubCommandEnabled")) {
+                    List<String> l = c.getStringList("lobbiesForThisServer");
+                    if (l.size() == 0) {
+                        p.sendMessage("\u00A7cThere is no lobbies set for this server");
+                        return true;
+                    }
+                    if (!l.contains(p.getSynapseEntry().getServerDescription())) {
+                        transferPlayer(p,l.get(new Random().nextInt(l.size())));
+                    } else {
+                        p.sendMessage("\u00A7cYou are already on a lobby server");
+                    }
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+    //<<synapsetools
+    
 }

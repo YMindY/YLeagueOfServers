@@ -1,17 +1,23 @@
 package yxmingy.leagueofservers;
 import cn.nukkit.scheduler.Task;
-import cn.nukkit.Player;
+import org.itxtech.synapseapi.SynapsePlayer;
 import cn.nukkit.Server;
 public class TransferTask extends Task{
-  private Player player;
-  private String cmd;
-  public TransferTask(Player p,String c)
+  private SynapsePlayer player;
+  private String target;
+  public TransferTask(SynapsePlayer p,String c)
   {
     player = p;
-    cmd = c;
+    target = c;
   }
   public void onRun(int i)
   {
-    Server.getInstance().dispatchCommand(player,cmd);
+    if(!player.transferByDescription(target))
+    {
+      player.sendMessage("跨服失败");
+      Main.transfer.remove(player.getName());
+    }else {
+      Server.getInstance().broadcastMessage("玩家"+player.getName()+"即将传送到"+target+"服务器");
+    }
   }
 }
