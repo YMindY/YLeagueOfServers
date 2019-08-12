@@ -31,6 +31,7 @@ public class Main extends PluginBase implements Listener
   public void onLoad()
   {
     getLogger().info("YLeagueOfServers is loading...");
+    transfer = new HashSet<String>();
     conf = new Config(getDataFolder()+"/config.yml",Config.YAML);
     if(conf.getAll().isEmpty()) {
       conf.set("是否为主服务器", "否");
