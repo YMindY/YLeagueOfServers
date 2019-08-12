@@ -1,0 +1,6 @@
+name: YLeagueOfServers
+api: ['1.0.0']
+main: yxmingy.leagueofservers.Main
+version: 1.0.0
+author: xMing
+load: POSTWORLD
