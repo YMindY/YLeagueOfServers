@@ -6,6 +6,7 @@ import cn.nukkit.event.Listener;
 import cn.nukkit.event.player.PlayerJoinEvent;
 import cn.nukkit.event.player.PlayerQuitEvent;
 import cn.nukkit.event.server.PlayerDataSerializeEvent;
+import cn.nukkit.utils.PlayerDataSerializer;
 import cn.nukkit.plugin.PluginBase;
 import cn.nukkit.utils.Config;
 import cn.nukkit.command.*;
@@ -29,7 +30,7 @@ public class Main extends PluginBase implements Listener
 {
   private Config conf;
   private boolean is_host;
-  private LeagueHandler handler;
+  private PlayerDataSerializer handler;
   private String pdatas;
   //synapsetools
   Config c;
@@ -65,7 +66,7 @@ public class Main extends PluginBase implements Listener
   public void onEnable()
   {
     getServer().getPluginManager().registerEvents(this,this);
-    handler = new LeagueHandler(String.valueOf(conf.get("主服务器主目录")));
+    handler = is_host ? getServer().getPlayerDataSerializer() : new LeagueHandler(String.valueOf(conf.get("主服务器主目录")));
     
     //synapsetools>>
         saveResource("synapsetools.yml");
@@ -133,6 +134,7 @@ public class Main extends PluginBase implements Listener
   }
   private void savePlayerData(Player player) {
     try {
+      player.save();
       Config playerdata = new Config(pdatas + player.getName() + ".yml", Config.YAML);
       playerdata.set("钱数",EconomyAPI.getInstance().myMoney(player));
       playerdata.save();
